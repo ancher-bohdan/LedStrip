@@ -115,31 +115,7 @@ int main(void)
   MX_DMA_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_DMA_RegisterCallback(&hdma_tim2_ch1, HAL_DMA_XFER_CPLT_CB_ID, int_func);
-  __HAL_TIM_SET_AUTORELOAD(&htim2, 104);
- // __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 59);
- // HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-  ws2812_init();
- /* ws2812_pixel_rgb_to_buf_dma(128, 0, 0, 0);
-  ws2812_pixel_rgb_to_buf_dma(0, 128, 0, 1);
-  ws2812_pixel_rgb_to_buf_dma(0, 0, 128, 2);
-  ws2812_pixel_rgb_to_buf_dma(64, 64, 0, 3);
-  ws2812_prepareValue(128,   0,   0,
-                      0, 128,   0,
-                      0,   0, 128,
-                     64,  64,   0,
-                      0,  64,  64,
-                     64,   0,  64,
-                     96,  32,   0,
-                     96,   0,  32,
-                     32,  96,   0,
-                      0,  96,  32,
-                      0,  32,  96,
-                     32,   0,  96);
-  ws2812_setValue();
-  ws2812_update();*/
-//  HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_1, a, sizeof(a));
-
+  initialise_buffer();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -149,7 +125,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    ws2812_test01();
   }
   /* USER CODE END 3 */
 }
