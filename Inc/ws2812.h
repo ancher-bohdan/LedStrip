@@ -53,6 +53,13 @@ struct __led_buffer {
     enum __led_buffer_state state;
 };
 
+struct ws2812_list_handler {
+    struct __led_buffer *read;
+    struct __led_buffer *write;
+    uint8_t buffer[BUFFER_COUNT][BUFFER_SIZE * BYTE_PER_LED];
+    uint8_t flags;
+};
+
 typedef struct __uint24_t {
     uint8_t data[3];
 } uint24_t;
