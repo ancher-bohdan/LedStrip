@@ -79,9 +79,24 @@ static void MX_TIM2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void int_func(DMA_HandleTypeDef *hdma)
+void start_dma_wraper(void *ptr, uint8_t size)
 {
-   HAL_TIM_PWM_Stop_DMA(&htim2, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_1, ptr, size);
+}
+
+void stop_dma_wraper()
+{
+  HAL_TIM_PWM_Stop_DMA(&htim2, TIM_CHANNEL_1);
+}
+
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
+{
+
+}
+
+void half_transfer_complete(DMA_HandleTypeDef *hdma)
+{
+
 }
 /* USER CODE END 0 */
 
@@ -115,7 +130,9 @@ int main(void)
   MX_DMA_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  initialise_buffer();
+  HAL_DMA_RegisterCallback(&hdma_tim2_ch1, HAL_DMA_XFER_HALFCPLT_CB_ID, half_transfer_complete);
+  initialise_buffer(start_dma_wraper, stop_dma_wraper);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */

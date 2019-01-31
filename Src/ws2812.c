@@ -1,16 +1,18 @@
 #include "ws2812.h"
 
+static struct ws2812_operation __external_functions;
+
 static struct ws2812_list_handler led_buffer = {
     .read = NULL,
     .write = NULL,
     .flags = 0
 };
 
-static struct __led_buffer **__alloc_ring_buffer(struct __led_buffer **prev)
+static struct __led_buffer_node **__alloc_ring_buffer(struct __led_buffer_node **prev)
 {
     static int recursion_count = 0;
 
-    *prev = (struct __led_buffer *)malloc(sizeof(struct __led_buffer));
+    *prev = (struct __led_buffer_node *)malloc(sizeof(struct __led_buffer_node));
 
     if(*prev == NULL)
         return NULL;
@@ -38,9 +40,9 @@ static void __fill_led_buffer(void)
         }
 }
 
-int initialise_buffer(void)
+int initialise_buffer(void (*start_dma)(void *ptr, uint8_t size), void (*stop_dma)())
 {
-    struct __led_buffer **last;
+    struct __led_buffer_node **last;
 
     __fill_led_buffer();
 
@@ -51,6 +53,9 @@ int initialise_buffer(void)
     (*last)->next = led_buffer.read;
 
     led_buffer.write = led_buffer.read;
+
+    __external_functions.__start_dma_fnc = start_dma;
+    __external_functions.__stop_dma_fnc = stop_dma;
 
     return 0;
 }

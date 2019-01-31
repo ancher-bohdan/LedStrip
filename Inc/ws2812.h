@@ -47,17 +47,22 @@ enum __led_buffer_state {
     LB_COUNT_STATES,
 };
 
-struct __led_buffer {
+struct __led_buffer_node {
     uint8_t *buffer;
-    struct __led_buffer *next;
+    struct __led_buffer_node *next;
     enum __led_buffer_state state;
 };
 
 struct ws2812_list_handler {
-    struct __led_buffer *read;
-    struct __led_buffer *write;
+    struct __led_buffer_node *read;
+    struct __led_buffer_node *write;
     uint8_t buffer[BUFFER_COUNT][BUFFER_SIZE * BYTE_PER_LED];
     uint8_t flags;
+};
+
+struct ws2812_operation {
+    void (*__start_dma_fnc)(void *ptr, uint8_t size);
+    void (*__stop_dma_fnc)();
 };
 
 typedef struct __uint24_t {
@@ -69,6 +74,6 @@ static inline void increment24(uint24_t *number)
     if(++(*(uint16_t *)number) == 0) number->data[3]++;
 }
 
-int initialise_buffer(void);
+int initialise_buffer(void (*start_dma)(void *ptr, uint8_t size), void (*stop_dma)());
 
 #endif /* WS2812_H_ */
