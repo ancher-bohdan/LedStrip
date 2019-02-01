@@ -33,9 +33,9 @@ static void __led_set(struct __led *buf, uint8_t r, uint8_t g, uint8_t b)
     uint8_t i;
     for(i = 0; i < 8; i++)
     {
-        buf->R[i] = (r & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
-        buf->G[i] = (g & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
-        buf->B[i] = (b & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+        buf->R[7 - i] = (r & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+        buf->G[7 - i] = (g & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+        buf->B[7 - i] = (b & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
     }
 }
 
@@ -43,12 +43,10 @@ static void __fill_led_buffer(void)
 {
     uint8_t i = 0, j = 0;
     for(i = 0; i < BUFFER_COUNT; i++)
-        for(j = 0; j < BUFFER_SIZE; )
+        for(j = 0; j < BUFFER_SIZE; j++)
         {
-            __led_set(&(led_buffer.buffer[i][j]), 0, 0, 0xFF);
-            __led_set(&(led_buffer.buffer[i][j + 1]), 0, 0xFF, 0);
-            __led_set(&(led_buffer.buffer[i][j + 2]), 0xFF, 0, 0);
-            j = j + 3;
+            if(i == 0) __led_set(&(led_buffer.buffer[i][j]), 0, 0, 0xFF);
+            else __led_set(&(led_buffer.buffer[i][j]), 0, 0xFF, 0);
         }
 }
 

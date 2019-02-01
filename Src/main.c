@@ -132,13 +132,14 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_DMA_RegisterCallback(&hdma_tim2_ch1, HAL_DMA_XFER_HALFCPLT_CB_ID, half_transfer_complete);
   initialise_buffer(start_dma_wraper, stop_dma_wraper);
-  ws2812_transfer_recurrent(NULL, 144);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+      ws2812_transfer_recurrent(NULL, 18);
+      HAL_Delay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
