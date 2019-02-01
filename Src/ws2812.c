@@ -33,9 +33,9 @@ static void __led_set(struct __led *buf, uint8_t r, uint8_t g, uint8_t b)
     uint8_t i;
     for(i = 0; i < 8; i++)
     {
-        buf->R[i] = (r & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
-        buf->G[i] = (g & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
-        buf->B[i] = (b & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+        buf->R[7 - i] = (r & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+        buf->G[7 - i] = (g & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+        buf->B[7 - i] = (b & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
     }
 }
 
