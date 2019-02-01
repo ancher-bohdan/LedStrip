@@ -79,7 +79,7 @@ static void MX_TIM2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void start_dma_wraper(void *ptr, uint8_t size)
+void start_dma_wraper(void *ptr, uint16_t size)
 {
   HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_1, ptr, size);
 }
@@ -91,12 +91,12 @@ void stop_dma_wraper()
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
-
+  ws2812_interrupt();
 }
 
 void half_transfer_complete(DMA_HandleTypeDef *hdma)
 {
-
+  ws2812_interrupt();
 }
 /* USER CODE END 0 */
 
@@ -132,7 +132,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_DMA_RegisterCallback(&hdma_tim2_ch1, HAL_DMA_XFER_HALFCPLT_CB_ID, half_transfer_complete);
   initialise_buffer(start_dma_wraper, stop_dma_wraper);
-
+  ws2812_transfer_recurrent(NULL, 144);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -294,6 +294,7 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+     while(1) {}
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

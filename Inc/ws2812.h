@@ -14,18 +14,24 @@
 #define LED_NUMBERS     144
 
 /* Number of buffer that will be allocating */
-#define BUFFER_COUNT    3
+#define BUFFER_COUNT    2
 
 /* Size of each buffer */
-#define BUFFER_SIZE     12
+#define BUFFER_SIZE     6
 
 /* How many bytes need for each led */
-#define BYTE_PER_LED    3
+#define WORDS_PER_LED    24
 
 /* ---------------------------------
  * Macros for parameters validation
  * !!!! DO NOT MODIFY !!!!
  * -------------------------------- */
+/* Value, that represent bit 1 in __led struct */
+#define LED_CODE_ONE    59
+
+/* Value, that represent bit 0 in __led struct */
+#define LED_CODE_ZERO 26
+
 #define NUMBER_OF_BUFFERS   LED_NUMBERS / BUFFER_SIZE
 
 #if (NUMBER_OF_BUFFERS * BUFFER_SIZE < LED_NUMBERS)
@@ -47,8 +53,14 @@ enum __led_buffer_state {
     LB_COUNT_STATES,
 };
 
+struct __led {
+    uint32_t G[8];
+    uint32_t R[8];
+    uint32_t B[8];
+};
+
 struct __led_buffer_node {
-    uint8_t *buffer;
+    struct __led *buffer;
     struct __led_buffer_node *next;
     enum __led_buffer_state state;
 };
@@ -56,24 +68,17 @@ struct __led_buffer_node {
 struct ws2812_list_handler {
     struct __led_buffer_node *read;
     struct __led_buffer_node *write;
-    uint8_t buffer[BUFFER_COUNT][BUFFER_SIZE * BYTE_PER_LED];
+    struct __led buffer[BUFFER_COUNT][BUFFER_SIZE];
     uint8_t flags;
 };
 
 struct ws2812_operation {
-    void (*__start_dma_fnc)(void *ptr, uint8_t size);
+    void (*__start_dma_fnc)(void *ptr, uint16_t size);
     void (*__stop_dma_fnc)();
 };
 
-typedef struct __uint24_t {
-    uint8_t data[3];
-} uint24_t;
-
-static inline void increment24(uint24_t *number)
-{
-    if(++(*(uint16_t *)number) == 0) number->data[3]++;
-}
-
-int initialise_buffer(void (*start_dma)(void *ptr, uint8_t size), void (*stop_dma)());
+int initialise_buffer(void (*start_dma)(void *ptr, uint16_t size), void (*stop_dma)());
+int ws2812_transfer_recurrent(void (*update)(uint32_t *ptr, uint8_t size), uint32_t count);
+void ws2812_interrupt();
 
 #endif /* WS2812_H_ */
