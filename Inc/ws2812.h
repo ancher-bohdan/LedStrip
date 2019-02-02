@@ -79,6 +79,8 @@ struct __led_buffers {
 
 struct __led_buffer_node {
     struct __dma_buffer *buffer;
+    struct __rgb_buffer *rgb;
+    struct __hsv_buffer *hsv;
     struct __led_buffer_node *next;
     enum __led_buffer_state state;
 };

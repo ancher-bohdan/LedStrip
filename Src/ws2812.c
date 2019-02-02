@@ -18,6 +18,8 @@ static struct __led_buffer_node **__alloc_ring_buffer(struct __led_buffer_node *
         return NULL;
 
     (*prev)->buffer = led_buffer.buffer.dma_buffer[recursion_count];
+    (*prev)->rgb = led_buffer.buffer.rgb_buffer[recursion_count];
+    (*prev)->hsv = led_buffer.buffer.hsv_buffer[recursion_count];
     (*prev)->state = LB_STATE_BUSY;
 
     if(recursion_count != (BUFFER_COUNT - 1)) {
