@@ -4,8 +4,7 @@ static struct ws2812_operation __external_functions;
 
 static struct ws2812_list_handler led_buffer = {
     .read = NULL,
-    .write = NULL,
-    .flags = 0
+    .write = NULL
 };
 
 static struct __led_buffer_node **__alloc_ring_buffer(struct __led_buffer_node **prev)
@@ -17,7 +16,7 @@ static struct __led_buffer_node **__alloc_ring_buffer(struct __led_buffer_node *
     if(*prev == NULL)
         return NULL;
 
-    (*prev)->buffer = led_buffer.buffer[recursion_count];
+    (*prev)->buffer = led_buffer.buffer.dma_buffer[recursion_count];
     (*prev)->state = LB_STATE_BUSY;
 
     if(recursion_count != (BUFFER_COUNT - 1)) {
@@ -28,7 +27,7 @@ static struct __led_buffer_node **__alloc_ring_buffer(struct __led_buffer_node *
     }
 }
 
-static void __led_set(struct __led *buf, uint8_t r, uint8_t g, uint8_t b)
+static void __led_set(struct __dma_buffer *buf, uint8_t r, uint8_t g, uint8_t b)
 {
     uint8_t i;
     for(i = 0; i < 8; i++)
@@ -45,9 +44,9 @@ static void __fill_led_buffer(void)
     for(i = 0; i < BUFFER_COUNT; i++)
         for(j = 0; j < BUFFER_SIZE; )
         {
-            __led_set(&(led_buffer.buffer[i][j]), 0, 0, 0xFF);
-            __led_set(&(led_buffer.buffer[i][j + 1]), 0, 0xFF, 0);
-            __led_set(&(led_buffer.buffer[i][j + 2]), 0xFF, 0, 0);
+            __led_set(&(led_buffer.buffer.dma_buffer[i][j]), 0, 0, 0xFF);
+            __led_set(&(led_buffer.buffer.dma_buffer[i][j + 1]), 0, 0xFF, 0);
+            __led_set(&(led_buffer.buffer.dma_buffer[i][j + 2]), 0xFF, 0, 0);
             j = j + 3;
         }
 }
