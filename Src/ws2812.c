@@ -1,4 +1,5 @@
 #include "ws2812.h"
+#include <math.h>
 
 static struct ws2812_operation __external_functions;
 
@@ -27,14 +28,110 @@ static struct __led_buffer_node **__alloc_ring_buffer(struct __led_buffer_node *
     }
 }
 
-static void __led_set(struct __dma_buffer *buf, uint8_t r, uint8_t g, uint8_t b)
+static void __rgb2dma(struct __rgb_buffer *src, struct __dma_buffer *dst)
 {
     uint8_t i;
     for(i = 0; i < 8; i++)
     {
-        buf->R[7 - i] = (r & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
-        buf->G[7 - i] = (g & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
-        buf->B[7 - i] = (b & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+        dst->R[7 - i] = ((src->r) & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+        dst->G[7 - i] = ((src->g) & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+        dst->B[7 - i] = ((src->b) & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+    }
+}
+
+static void __rgb2hsv(struct __rgb_buffer *src, struct __hsv_buffer *dst)
+{
+    double      min, max, delta;
+
+    min = src->r < src->g ? src->r : src->g;
+    min = min  < src->b ? min  : src->b;
+
+    max = src->r > src->g ? src->r : src->g;
+    max = max  > src->b ? max  : src->b;
+
+    dst->v = max;                                // v
+    delta = max - min;
+    if (delta < 0.00001)
+    {
+        dst->s = 0;
+        dst->h = 0; // undefined, maybe nan?
+        return;
+    }
+    if( max > 0.0 ) { // NOTE: if Max is == 0, this divide would cause a crash
+        dst->s = (delta / max);                  // s
+    } else {
+        // if max is 0, then r = g = b = 0              
+        // s = 0, h is undefined
+        dst->s = 0.0;
+        dst->h = NAN;                            // its now undefined
+        return;
+    }
+    if( src->r >= max )                           // > is bogus, just keeps compilor happy
+        dst->h = ( src->g - src->b ) / delta;        // between yellow & magenta
+    else
+    if( src->g >= max )
+        dst->h = 2.0 + ( src->b - src->r ) / delta;  // between cyan & yellow
+    else
+        dst->h = 4.0 + ( src->r - src->g ) / delta;  // between magenta & cyan
+
+    dst->h *= 60.0;                              // degrees
+
+    if( dst->h < 0.0 )
+        dst->h += 360.0;
+}
+
+static void __hsv2rgb(struct __hsv_buffer *src, struct __rgb_buffer *dst)
+{
+    double      hh, p, q, t, ff;
+    long        i;
+
+    if(src->s <= 0.0) {       // < is bogus, just shuts up warnings
+        dst->r = src->v;
+        dst->g = src->v;
+        dst->b = src->v;
+    }
+    hh = src->h;
+    if(hh >= 360.0) hh = 0.0;
+    hh /= 60.0;
+    i = (long)hh;
+    ff = hh - i;
+    p = src->v * (1.0 - src->s);
+    q = src->v * (1.0 - (src->s * ff));
+    t = src->v * (1.0 - (src->s * (1.0 - ff)));
+
+    switch(i) {
+    case 0:
+        dst->r = src->v;
+        dst->g = t;
+        dst->b = p;
+        break;
+    case 1:
+        dst->r = q;
+        dst->g = src->v;
+        dst->b = p;
+        break;
+    case 2:
+        dst->r = p;
+        dst->g = src->v;
+        dst->b = t;
+        break;
+
+    case 3:
+        dst->r = p;
+        dst->g = q;
+        dst->b = src->v;
+        break;
+    case 4:
+        dst->r = t;
+        dst->g = p;
+        dst->b = src->v;
+        break;
+    case 5:
+    default:
+        dst->r = src->v;
+        dst->g = p;
+        dst->b = q;
+        break;
     }
 }
 
@@ -44,9 +141,12 @@ static void __fill_led_buffer(void)
     for(i = 0; i < BUFFER_COUNT; i++)
         for(j = 0; j < BUFFER_SIZE; )
         {
-            __led_set(&(led_buffer.buffer.dma_buffer[i][j]), 0, 0, 0xFF);
-            __led_set(&(led_buffer.buffer.dma_buffer[i][j + 1]), 0, 0xFF, 0);
-            __led_set(&(led_buffer.buffer.dma_buffer[i][j + 2]), 0xFF, 0, 0);
+            led_buffer.buffer.rgb_buffer[i][j].r = 0xFF;
+            led_buffer.buffer.rgb_buffer[i][j + 1].b = 0xFF;
+            led_buffer.buffer.rgb_buffer[i][j + 2].g = 0xFF;
+            __rgb2dma(&(led_buffer.buffer.rgb_buffer[i][j]), &(led_buffer.buffer.dma_buffer[i][j]));
+            __rgb2dma(&(led_buffer.buffer.rgb_buffer[i][j + 1]), &(led_buffer.buffer.dma_buffer[i][j + 1]));
+            __rgb2dma(&(led_buffer.buffer.rgb_buffer[i][j + 2]), &(led_buffer.buffer.dma_buffer[i][j + 2]));
             j = j + 3;
         }
 }
