@@ -162,6 +162,7 @@ static update_fnc __prepare_list_handle(enum supported_recurrent recurent)
 
     for(i = 0; i < BUFFER_COUNT; i++)
     {
+        if(tmp->buffer == led_buffer.buffer.dma_buffer) led_buffer.write = tmp;
         tmp->state = LB_STATE_BUSY;
         tmp = tmp->next;
     }
@@ -197,7 +198,9 @@ int initialise_buffer(void (*start_dma)(void *ptr, uint16_t size), void (*stop_d
     return 0;
 }
 
-int ws2812_transfer_recurrent(enum supported_recurrent recurent, uint8_t k, uint8_t b, uint32_t count)
+uint8_t conv = 1;
+
+int ws2812_transfer_recurrent(enum supported_recurrent recurent, uint8_t k, uint8_t b, uint8_t x0, uint8_t xmax, uint32_t count)
 {
     uint8_t i, j;
     struct update_context *update_ctx = NULL;
@@ -211,13 +214,15 @@ int ws2812_transfer_recurrent(enum supported_recurrent recurent, uint8_t k, uint
 
             update_ctx->k = k;
             update_ctx->b = b;
-            update_ctx->is_convergens = 1;
-            update_ctx->x_prev = 1;
-            update_ctx->xmax = 255;
+            update_ctx->is_convergens = conv;
+            update_ctx->x_prev = x0;
+            update_ctx->xmax = xmax;
             for(i = 0; i < BUFFER_COUNT; i++)
             {
                 for(j = 0; j < BUFFER_SIZE; j++)
                 {
+                    tmp->rgb[j].b = 0;
+                    tmp->rgb[j].g = 0;
                     tmp->rgb[j].r = update(update_ctx);
                     __rgb2dma(&(tmp->rgb[j]), &(tmp->buffer[j]));
                 }
@@ -232,31 +237,33 @@ int ws2812_transfer_recurrent(enum supported_recurrent recurent, uint8_t k, uint
     __external_functions.__start_dma_fnc((uint32_t *)(led_buffer.buffer.dma_buffer), 
                     BUFFER_COUNT * BUFFER_SIZE * WORDS_PER_LED);
 
-    while(count > 0)
+    while(1)
     {
         if(led_buffer.write != led_buffer.read)
         {
+            count -= BUFFER_SIZE;
+            if(count <= 0) break;
+
             assert_param(led_buffer.write->state == LB_STATE_FREE);
 
             if(update != NULL)
             {
                 for(i = 0; i < BUFFER_SIZE; i++)
                 {
-                    led_buffer.write->rgb[i].r = update(update_ctx);
-                    led_buffer.write->rgb[i].g = 0;
                     led_buffer.write->rgb[i].b = 0;
+                    led_buffer.write->rgb[i].g = 0;
+                    led_buffer.write->rgb[i].r = update(update_ctx);
                     __rgb2dma(&(led_buffer.write->rgb[i]), &(led_buffer.write->buffer[i]));
                 }
             }
         
             led_buffer.write->state = LB_STATE_BUSY;
             led_buffer.write = led_buffer.write->next;
-
-            count -= BUFFER_SIZE;
         }
     }
 
     __external_functions.__stop_dma_fnc();
+    conv = update_ctx->is_convergens;
     if(update_ctx) free(update_ctx);
 
     return 0;

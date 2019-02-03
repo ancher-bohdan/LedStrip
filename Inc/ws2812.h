@@ -104,7 +104,7 @@ struct ws2812_operation {
 };
 
 int initialise_buffer(void (*start_dma)(void *ptr, uint16_t size), void (*stop_dma)());
-int ws2812_transfer_recurrent(enum supported_recurrent recurent, uint8_t k, uint8_t b, uint32_t count);
+int ws2812_transfer_recurrent(enum supported_recurrent recurent, uint8_t k, uint8_t b, uint8_t x0, uint8_t xmax, uint32_t count);
 void ws2812_interrupt();
 
 #endif /* WS2812_H_ */
