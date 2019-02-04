@@ -86,6 +86,7 @@ void start_dma_wraper(void *ptr, uint16_t size)
 
 void stop_dma_wraper()
 {
+  HAL_DMA_Abort_IT(&hdma_tim2_ch1);
   HAL_TIM_PWM_Stop_DMA(&htim2, TIM_CHANNEL_1);
 }
 

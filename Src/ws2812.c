@@ -139,22 +139,6 @@ static void __hsv2rgb(struct __hsv_buffer *src, struct __rgb_buffer *dst)
     }
 }
 
-static void __fill_led_buffer(void)
-{
-    uint8_t i = 0, j = 0;
-    for(i = 0; i < BUFFER_COUNT; i++)
-        for(j = 0; j < BUFFER_SIZE; )
-        {
-            led_buffer.buffer.rgb_buffer[i][j].r = 0xFF;
-            led_buffer.buffer.rgb_buffer[i][j + 1].b = 0xFF;
-            led_buffer.buffer.rgb_buffer[i][j + 2].g = 0xFF;
-            __rgb2dma(&(led_buffer.buffer.rgb_buffer[i][j]), &(led_buffer.buffer.dma_buffer[i][j]));
-            __rgb2dma(&(led_buffer.buffer.rgb_buffer[i][j + 1]), &(led_buffer.buffer.dma_buffer[i][j + 1]));
-            __rgb2dma(&(led_buffer.buffer.rgb_buffer[i][j + 2]), &(led_buffer.buffer.dma_buffer[i][j + 2]));
-            j = j + 3;
-        }
-}
-
 static update_fnc __prepare_list_handle(enum supported_recurrent recurent)
 {
     struct __led_buffer_node *tmp = led_buffer.read;
@@ -182,8 +166,6 @@ int initialise_buffer(void (*start_dma)(void *ptr, uint16_t size), void (*stop_d
 {
     struct __led_buffer_node **last;
 
-    //__fill_led_buffer();
-
     last = __alloc_ring_buffer(&led_buffer.read);
 
     if(last == NULL) return ENOMEM;
@@ -197,8 +179,6 @@ int initialise_buffer(void (*start_dma)(void *ptr, uint16_t size), void (*stop_d
 
     return 0;
 }
-
-uint8_t conv = 1;
 
 int ws2812_transfer_recurrent(enum supported_recurrent recurent, uint8_t k, uint8_t b, uint8_t x0, uint8_t xmax, uint32_t count)
 {
@@ -214,7 +194,7 @@ int ws2812_transfer_recurrent(enum supported_recurrent recurent, uint8_t k, uint
 
             update_ctx->k = k;
             update_ctx->b = b;
-            update_ctx->is_convergens = conv;
+            update_ctx->is_convergens = 1;
             update_ctx->x_prev = x0;
             update_ctx->xmax = xmax;
             for(i = 0; i < BUFFER_COUNT; i++)
@@ -263,7 +243,6 @@ int ws2812_transfer_recurrent(enum supported_recurrent recurent, uint8_t k, uint
     }
 
     __external_functions.__stop_dma_fnc();
-    conv = update_ctx->is_convergens;
     if(update_ctx) free(update_ctx);
 
     return 0;

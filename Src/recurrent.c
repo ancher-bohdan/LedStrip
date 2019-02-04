@@ -18,7 +18,7 @@ uint8_t recurent_linear_update(struct update_context *ctx)
     {
         result = ctx->x_prev / ctx->k - ctx->b;
         ctx->x_prev = result;
-        if(result < 0) {
+        if(result <= 1) {
             ctx->is_convergens = 1;
             return 1;
         }
