@@ -38,6 +38,7 @@ BUILD_DIR = build
 C_SOURCES =  \
 ../Src/main.c \
 ../Src/ws2812.c \
+../Src/recurrent.c \
 ../Src/stm32f4xx_it.c \
 ../Src/stm32f4xx_hal_msp.c \
 ../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
@@ -103,7 +104,8 @@ AS_DEFS =
 # C defines
 C_DEFS =  \
 -DUSE_HAL_DRIVER \
--DSTM32F407xx
+-DSTM32F407xx \
+-DUSE_FULL_ASSERT
 
 
 # AS includes

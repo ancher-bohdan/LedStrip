@@ -86,6 +86,7 @@ void start_dma_wraper(void *ptr, uint16_t size)
 
 void stop_dma_wraper()
 {
+  HAL_DMA_Abort_IT(&hdma_tim2_ch1);
   HAL_TIM_PWM_Stop_DMA(&htim2, TIM_CHANNEL_1);
 }
 
@@ -132,14 +133,17 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_DMA_RegisterCallback(&hdma_tim2_ch1, HAL_DMA_XFER_HALFCPLT_CB_ID, half_transfer_complete);
   initialise_buffer(start_dma_wraper, stop_dma_wraper);
+  //ws2812_transfer_recurrent(RECURENT_LINEAR, 1, 120, 30, 127, 144);
+  //HAL_Delay(2000);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-      ws2812_transfer_recurrent(NULL, 18);
-      HAL_Delay(100);
+    ws2812_transfer_recurrent("0*lin+100;0...255", NULL, NULL, 144);
+    HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
