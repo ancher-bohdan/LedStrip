@@ -135,6 +135,7 @@ int main(void)
   initialise_buffer(start_dma_wraper, stop_dma_wraper);
   //ws2812_transfer_recurrent(RECURENT_LINEAR, 1, 120, 30, 127, 144);
   //HAL_Delay(2000);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
