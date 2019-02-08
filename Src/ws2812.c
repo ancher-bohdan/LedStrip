@@ -243,7 +243,10 @@ int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, uint8_t cou
 
     __prepare_list_handle();
 
-    for(i = 0; i < BUFFER_COUNT; i++)
+    memset(tmp->buffer, 0, BUFFER_SIZE * WORDS_PER_LED * 4);
+    tmp = tmp->next;
+
+    for(i = 1; i < BUFFER_COUNT; i++)
     {
         for(j = 0; j < BUFFER_SIZE; j++)
         {
