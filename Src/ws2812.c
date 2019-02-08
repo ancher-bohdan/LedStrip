@@ -139,7 +139,7 @@ static void __hsv2rgb(struct __hsv_buffer *src, struct __rgb_buffer *dst)
     }
 }
 
-static update_fnc __prepare_list_handle(enum supported_recurrent recurent)
+static void __prepare_list_handle(void)
 {
     struct __led_buffer_node *tmp = led_buffer.read;
     uint8_t i;
@@ -152,14 +152,6 @@ static update_fnc __prepare_list_handle(enum supported_recurrent recurent)
     }
 
     led_buffer.read = led_buffer.write;
-
-    switch (recurent)
-    {
-        case RECURENT_LINEAR:            
-            return recurent_linear_update;
-        default:
-            return NULL;
-    }
 }
 
 int initialise_buffer(void (*start_dma)(void *ptr, uint16_t size), void (*stop_dma)())
@@ -180,43 +172,93 @@ int initialise_buffer(void (*start_dma)(void *ptr, uint16_t size), void (*stop_d
     return 0;
 }
 
-int ws2812_transfer_recurrent(enum supported_recurrent recurent, uint8_t k, uint8_t b, uint8_t x0, uint8_t xmax, uint32_t count)
+static struct update_context *parse_recurrent_param(char *param)
+{
+    struct update_context *result;
+    char *token;
+    int code = 0, k = 0, b = 0;
+    char func[4];
+
+    result = (struct update_context *)malloc(sizeof(struct update_context));
+
+    if(result == NULL) goto exit;
+
+    if(param == NULL)
+    {
+        result->k = 0;
+        result->b = 0;
+        result->recurrent = RECURENT_LINEAR;
+        result->x_prev = 0;
+        result->xmax = 255;
+        result->is_convergens = 1;
+        result->update_fnc = recurent_linear_update;
+        return result;
+    }
+
+    token = strtok(param, ";");
+    code = sscanf(token, "%d*%3s+%d", &k, func, &b);
+
+    if(code != 3) goto error;
+
+    if(!strcmp(func, "lin"))
+    {
+        result->recurrent = RECURENT_LINEAR;
+        result->update_fnc = recurent_linear_update;
+    }
+    else
+        goto error;
+
+    result->b = b;
+    result->k = k;
+
+    token = strtok(NULL, ";");
+    code = sscanf(token, "%d...%d", &k, &b);
+
+    if(code != 2) goto error;
+
+    result->x_prev = k;
+    result->xmax = b;
+    result->is_convergens = 1;
+
+    goto exit;
+
+error:
+    free(result);
+    result = NULL;
+exit:
+    return result;
+}
+
+int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, uint8_t count)
 {
     uint8_t i, j;
-    struct update_context *update_ctx = NULL;
-    update_fnc update = __prepare_list_handle(recurent);
+    struct update_context *update_r, *update_b, *update_g;
+    struct __led_buffer_node *tmp = led_buffer.read;
 
-    if(update){
-        update_ctx = (struct update_context *)malloc(sizeof(struct update_context));
-        if(update_ctx != NULL)
+    update_r = parse_recurrent_param(r_exp);
+    update_g = parse_recurrent_param(g_exp);
+    update_b = parse_recurrent_param(b_exp);
+
+    if(update_b == NULL || update_r == NULL || update_g == NULL) return 1;
+
+    __prepare_list_handle();
+
+    for(i = 0; i < BUFFER_COUNT; i++)
+    {
+        for(j = 0; j < BUFFER_SIZE; j++)
         {
-            struct __led_buffer_node *tmp = led_buffer.read;
+            tmp->rgb[j].b = update_b->update_fnc(update_b);
+            tmp->rgb[j].g = update_g->update_fnc(update_g);
+            tmp->rgb[j].r = update_r->update_fnc(update_r);
 
-            update_ctx->k = k;
-            update_ctx->b = b;
-            update_ctx->is_convergens = 1;
-            update_ctx->x_prev = x0;
-            update_ctx->xmax = xmax;
-            for(i = 0; i < BUFFER_COUNT; i++)
-            {
-                for(j = 0; j < BUFFER_SIZE; j++)
-                {
-                    tmp->rgb[j].b = 0;
-                    tmp->rgb[j].g = 0;
-                    tmp->rgb[j].r = update(update_ctx);
-                    __rgb2dma(&(tmp->rgb[j]), &(tmp->buffer[j]));
-                }
-                tmp = tmp->next;
-            }
-
+            __rgb2dma(&(tmp->rgb[j]), &(tmp->buffer[j]));
         }
-        else update = NULL;
+        tmp = tmp->next;
     }
 
     led_buffer.read->state = LB_STATE_IN_PROGRESS;
     __external_functions.__start_dma_fnc((uint32_t *)(led_buffer.buffer.dma_buffer), 
                     BUFFER_COUNT * BUFFER_SIZE * WORDS_PER_LED);
-
     while(1)
     {
         if(led_buffer.write != led_buffer.read)
@@ -226,24 +268,24 @@ int ws2812_transfer_recurrent(enum supported_recurrent recurent, uint8_t k, uint
 
             assert_param(led_buffer.write->state == LB_STATE_FREE);
 
-            if(update != NULL)
+            for(i = 0; i < BUFFER_SIZE; i++)
             {
-                for(i = 0; i < BUFFER_SIZE; i++)
-                {
-                    led_buffer.write->rgb[i].b = 0;
-                    led_buffer.write->rgb[i].g = 0;
-                    led_buffer.write->rgb[i].r = update(update_ctx);
-                    __rgb2dma(&(led_buffer.write->rgb[i]), &(led_buffer.write->buffer[i]));
-                }
+                led_buffer.write->rgb[i].b = update_b->update_fnc(update_b);
+                led_buffer.write->rgb[i].g = update_g->update_fnc(update_g);
+                led_buffer.write->rgb[i].r = update_b->update_fnc(update_r);
+                __rgb2dma(&(led_buffer.write->rgb[i]), &(led_buffer.write->buffer[i]));
             }
-        
+
             led_buffer.write->state = LB_STATE_BUSY;
             led_buffer.write = led_buffer.write->next;
         }
     }
 
     __external_functions.__stop_dma_fnc();
-    if(update_ctx) free(update_ctx);
+
+    free(update_r);
+    free(update_g);
+    free(update_b);
 
     return 0;
 }

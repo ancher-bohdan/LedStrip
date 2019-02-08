@@ -53,13 +53,6 @@ enum __led_buffer_state {
     LB_COUNT_STATES,
 };
 
-enum supported_recurrent
-{
-    RECURENT_LINEAR = 0,
-
-    RECURENT_COUNTER
-};
-
 struct __dma_buffer {
     uint32_t G[8];
     uint32_t R[8];
@@ -104,7 +97,7 @@ struct ws2812_operation {
 };
 
 int initialise_buffer(void (*start_dma)(void *ptr, uint16_t size), void (*stop_dma)());
-int ws2812_transfer_recurrent(enum supported_recurrent recurent, uint8_t k, uint8_t b, uint8_t x0, uint8_t xmax, uint32_t count);
+int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, uint8_t count);
 void ws2812_interrupt();
 
 #endif /* WS2812_H_ */

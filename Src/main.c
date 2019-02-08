@@ -141,6 +141,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    ws2812_transfer_recurrent("0*lin+100;0...255", NULL, NULL, 144);
+    HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
