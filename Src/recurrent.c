@@ -28,3 +28,21 @@ uint8_t recurent_linear_update(struct update_context *ctx)
         return (uint8_t)result;
     }
 }
+
+#define TO_RADIAN(degree) ((degree) * (PI) / 180) 
+
+uint8_t recurent_sin_update(struct update_context *ctx)
+{
+    int16_t result;
+    struct update_context_trigonometric *trig_context = TO_TRIGONOMETRIC_CONTEXT(ctx);
+
+    result = (int16_t)(ctx->k * _SIN(TO_RADIAN(ctx->x_prev)) + ctx->k + ctx->b);
+
+    ctx->x_prev += trig_context->step;
+
+    if(ctx->x_prev >= 360) ctx->x_prev = 0;
+
+    if(result > 255) return 255;
+
+    return (uint8_t)result;
+}

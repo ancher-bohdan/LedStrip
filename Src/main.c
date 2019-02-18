@@ -44,6 +44,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ws2812.h"
+#include "arm_math.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -108,6 +109,8 @@ void half_transfer_complete(DMA_HandleTypeDef *hdma)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+  char a[20];
+  uint16_t i = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -142,8 +145,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    ws2812_transfer_recurrent("0*lin+100;0...255", NULL, NULL, 144);
-    HAL_Delay(1000);
+    sprintf(a, "100*sin+0;%d...5", i);
+    ws2812_transfer_recurrent(a, NULL, NULL, 144);
+    i = i + 5;
+    if(i == 360) i = 0;
+    HAL_Delay(10);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

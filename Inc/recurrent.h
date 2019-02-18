@@ -3,13 +3,6 @@
 
 #include <stdint.h>
 
-enum supported_recurrent
-{
-    RECURENT_LINEAR = 0,
-
-    RECURENT_COUNTER
-};
-
 struct update_context {
     uint8_t k;
     uint8_t b;
@@ -32,9 +25,10 @@ struct update_context_trigonometric {
 typedef uint8_t (*update_fnc)(struct update_context *);
 
 uint8_t recurent_linear_update(struct update_context *ctx);
+uint8_t recurent_sin_update(struct update_context *ctx);
 
-#define TO_LINEAR_CONTEXT(ctx)      ((struct update_context_linear *)(ctx))
+#define TO_LINEAR_CONTEXT(ctx)          ((struct update_context_linear *)(ctx))
 
-#define TO_TRIGONOMETRIC_CONTEXT    ((struct update_context_trigonometric *)(ctx))
+#define TO_TRIGONOMETRIC_CONTEXT(ctx)   ((struct update_context_trigonometric *)(ctx))
 
 #endif /* __RECURRENT__INIT__ */

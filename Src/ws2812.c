@@ -218,6 +218,24 @@ static struct update_context *parse_recurrent_param(char *param)
         TO_LINEAR_CONTEXT(result)->xmax = b;
         TO_LINEAR_CONTEXT(result)->is_convergens = 1;
     }
+    else if(!strcmp(func, "sin"))
+    {
+        result = (struct update_context *)malloc(sizeof(struct update_context_trigonometric));
+
+        if(result == NULL) goto exit;
+
+        result->update_fnc = recurent_sin_update;
+        result->b = b;
+        result->k = k;
+        
+        token = strtok(NULL, ";");
+        code = sscanf(token, "%d...%d", &k, &b);
+
+        if(code != 2) goto error;
+
+        result->x_prev = k;
+        TO_TRIGONOMETRIC_CONTEXT(result)->step = b;
+    }
     else
         goto error;
 
