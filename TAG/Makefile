@@ -105,7 +105,8 @@ AS_DEFS =
 C_DEFS =  \
 -DUSE_HAL_DRIVER \
 -DSTM32F407xx \
--DUSE_FULL_ASSERT
+-DUSE_FULL_ASSERT \
+-DARM_MATH_CM4
 
 
 # AS includes
@@ -142,7 +143,7 @@ LDSCRIPT = STM32F407VGTx_FLASH.ld
 
 # libraries
 LIBS = -lc -lm -lnosys 
-LIBDIR = 
+LIBDIR = ../Drivers/CMSIS/Lib/GCC/libarm_cortexM4lf_math.a
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all

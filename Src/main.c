@@ -44,6 +44,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ws2812.h"
+#include "arm_math.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -108,6 +109,8 @@ void half_transfer_complete(DMA_HandleTypeDef *hdma)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+  char a[20], b[20];
+  uint16_t i = 0, j = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -133,8 +136,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_DMA_RegisterCallback(&hdma_tim2_ch1, HAL_DMA_XFER_HALFCPLT_CB_ID, half_transfer_complete);
   initialise_buffer(start_dma_wraper, stop_dma_wraper);
-  //ws2812_transfer_recurrent(RECURENT_LINEAR, 1, 120, 30, 127, 144);
-  //HAL_Delay(2000);
 
   /* USER CODE END 2 */
 
@@ -142,8 +143,14 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    ws2812_transfer_recurrent("0*lin+100;0...255", NULL, NULL, 144);
-    HAL_Delay(1000);
+    sprintf(a, "100*cos+0;%d...5", i);
+    sprintf(b, "100*sin+0;%d...5", j);
+    ws2812_transfer_recurrent(a, b, NULL, 144);
+    i = i + 5;
+    j = j + 5;
+    if(i == 360) i = 0;
+    if(j == 360) j = 0;
+    HAL_Delay(25);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

@@ -179,18 +179,17 @@ static struct update_context *parse_recurrent_param(char *param)
     int code = 0, k = 0, b = 0;
     char func[4];
 
-    result = (struct update_context *)malloc(sizeof(struct update_context));
-
-    if(result == NULL) goto exit;
-
     if(param == NULL)
     {
+        result = (struct update_context *)malloc(sizeof(struct update_context_linear));
+
+        if(result == NULL) goto exit;
+
         result->k = 0;
         result->b = 0;
-        result->recurrent = RECURENT_LINEAR;
         result->x_prev = 0;
-        result->xmax = 255;
-        result->is_convergens = 1;
+        TO_LINEAR_CONTEXT(result)->xmax = 255;
+        TO_LINEAR_CONTEXT(result)->is_convergens = 1;
         result->update_fnc = recurent_linear_update;
         return result;
     }
@@ -202,23 +201,49 @@ static struct update_context *parse_recurrent_param(char *param)
 
     if(!strcmp(func, "lin"))
     {
-        result->recurrent = RECURENT_LINEAR;
+        result = (struct update_context *)malloc(sizeof(struct update_context_linear));
+
+        if(result == NULL) goto exit;
+
         result->update_fnc = recurent_linear_update;
+        result->b = b;
+        result->k = k;
+        
+        token = strtok(NULL, ";");
+        code = sscanf(token, "%d...%d", &k, &b);
+
+        if(code != 2) goto error;
+
+        result->x_prev = k;
+        TO_LINEAR_CONTEXT(result)->xmax = b;
+        TO_LINEAR_CONTEXT(result)->is_convergens = 1;
+    }
+    else if( (!strcmp(func, "sin")) || (!strcmp(func, "cos")) )
+    {
+        result = (struct update_context *)malloc(sizeof(struct update_context_trigonometric));
+
+        if(result == NULL) goto exit;
+
+        result->update_fnc = recurent_sin_update;
+        result->b = b;
+        result->k = k;
+        
+        token = strtok(NULL, ";");
+        code = sscanf(token, "%d...%d", &k, &b);
+
+        if(code != 2) goto error;
+
+        result->x_prev = k;
+        TO_TRIGONOMETRIC_CONTEXT(result)->step = b;
+        if(!strcmp(func, "cos"))
+        {
+            result->x_prev += 90;
+            if(result->x_prev >= 360) result->x_prev -= 360; 
+
+        }
     }
     else
         goto error;
-
-    result->b = b;
-    result->k = k;
-
-    token = strtok(NULL, ";");
-    code = sscanf(token, "%d...%d", &k, &b);
-
-    if(code != 2) goto error;
-
-    result->x_prev = k;
-    result->xmax = b;
-    result->is_convergens = 1;
 
     goto exit;
 
@@ -275,7 +300,7 @@ int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, uint8_t cou
             {
                 led_buffer.write->rgb[i].b = update_b->update_fnc(update_b);
                 led_buffer.write->rgb[i].g = update_g->update_fnc(update_g);
-                led_buffer.write->rgb[i].r = update_b->update_fnc(update_r);
+                led_buffer.write->rgb[i].r = update_r->update_fnc(update_r);
                 __rgb2dma(&(led_buffer.write->rgb[i]), &(led_buffer.write->buffer[i]));
             }
 
