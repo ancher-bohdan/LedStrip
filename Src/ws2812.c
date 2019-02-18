@@ -276,7 +276,7 @@ int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, uint8_t cou
             {
                 led_buffer.write->rgb[i].b = update_b->update_fnc(update_b);
                 led_buffer.write->rgb[i].g = update_g->update_fnc(update_g);
-                led_buffer.write->rgb[i].r = update_b->update_fnc(update_r);
+                led_buffer.write->rgb[i].r = update_r->update_fnc(update_r);
                 __rgb2dma(&(led_buffer.write->rgb[i]), &(led_buffer.write->buffer[i]));
             }
 
