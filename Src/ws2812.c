@@ -218,7 +218,7 @@ static struct update_context *parse_recurrent_param(char *param)
         TO_LINEAR_CONTEXT(result)->xmax = b;
         TO_LINEAR_CONTEXT(result)->is_convergens = 1;
     }
-    else if(!strcmp(func, "sin"))
+    else if( (!strcmp(func, "sin")) || (!strcmp(func, "cos")) )
     {
         result = (struct update_context *)malloc(sizeof(struct update_context_trigonometric));
 
@@ -235,6 +235,12 @@ static struct update_context *parse_recurrent_param(char *param)
 
         result->x_prev = k;
         TO_TRIGONOMETRIC_CONTEXT(result)->step = b;
+        if(!strcmp(func, "cos"))
+        {
+            result->x_prev += 90;
+            if(result->x_prev >= 360) result->x_prev -= 360; 
+
+        }
     }
     else
         goto error;
