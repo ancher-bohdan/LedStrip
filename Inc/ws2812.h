@@ -59,28 +59,38 @@ struct __dma_buffer {
     uint32_t B[8];
 };
 
+struct __abstract {
+    uint16_t first;
+    uint8_t second;
+    uint8_t third;
+};
+
 struct __rgb_buffer {
-        uint8_t r;
+        uint16_t r;
         uint8_t g;
         uint8_t b;
 };
 
 struct __hsv_buffer {
-        double h;
-        double s;
-        double v;
+        uint16_t h;
+        uint8_t s;
+        uint8_t v;
+};
+
+union __color {
+    struct __rgb_buffer rgb;
+    struct __hsv_buffer hsv;
+    struct __abstract abstract;
 };
 
 struct __led_buffers {
     struct __dma_buffer dma_buffer[BUFFER_COUNT][BUFFER_SIZE];
-    struct __rgb_buffer rgb_buffer[BUFFER_COUNT][BUFFER_SIZE];
-    struct __hsv_buffer hsv_buffer[BUFFER_COUNT][BUFFER_SIZE];
+    union  __color col[BUFFER_COUNT][BUFFER_SIZE];
 };
 
 struct __led_buffer_node {
     struct __dma_buffer *buffer;
-    struct __rgb_buffer *rgb;
-    struct __hsv_buffer *hsv;
+    union  __color *col;
     struct __led_buffer_node *next;
     enum __led_buffer_state state;
 };

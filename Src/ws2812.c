@@ -20,8 +20,7 @@ static struct __led_buffer_node **__alloc_ring_buffer(struct __led_buffer_node *
         return NULL;
 
     (*prev)->buffer = led_buffer.buffer.dma_buffer[recursion_count];
-    (*prev)->rgb = led_buffer.buffer.rgb_buffer[recursion_count];
-    (*prev)->hsv = led_buffer.buffer.hsv_buffer[recursion_count];
+    (*prev)->col = led_buffer.buffer.col[recursion_count];
     (*prev)->state = LB_STATE_BUSY;
 
     if(recursion_count != (BUFFER_COUNT - 1)) {
@@ -67,7 +66,7 @@ static void __rgb2hsv(struct __rgb_buffer *src, struct __hsv_buffer *dst)
         // if max is 0, then r = g = b = 0              
         // s = 0, h is undefined
         dst->s = 0.0;
-        dst->h = NAN;                            // its now undefined
+        dst->h = 0;                            // its now undefined
         return;
     }
     if( src->r >= max )                           // > is bogus, just keeps compilor happy
@@ -146,7 +145,7 @@ static void __prepare_list_handle(void)
 
     for(i = 0; i < BUFFER_COUNT; i++)
     {
-        if(tmp->buffer == led_buffer.buffer.dma_buffer) led_buffer.write = tmp;
+        if(tmp->buffer == led_buffer.buffer.dma_buffer[0]) led_buffer.write = tmp;
         tmp->state = LB_STATE_BUSY;
         tmp = tmp->next;
     }
@@ -275,11 +274,11 @@ int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, uint8_t cou
     {
         for(j = 0; j < BUFFER_SIZE; j++)
         {
-            tmp->rgb[j].b = update_b->update_fnc(update_b);
-            tmp->rgb[j].g = update_g->update_fnc(update_g);
-            tmp->rgb[j].r = update_r->update_fnc(update_r);
+            tmp->col[j].abstract.third = update_b->update_fnc(update_b);
+            tmp->col[j].abstract.second = update_g->update_fnc(update_g);
+            tmp->col[j].abstract.first = update_r->update_fnc(update_r);
 
-            __rgb2dma(&(tmp->rgb[j]), &(tmp->buffer[j]));
+            __rgb2dma(&(tmp->col[j].rgb), &(tmp->buffer[j]));
         }
         tmp = tmp->next;
     }
@@ -298,10 +297,10 @@ int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, uint8_t cou
 
             for(i = 0; i < BUFFER_SIZE; i++)
             {
-                led_buffer.write->rgb[i].b = update_b->update_fnc(update_b);
-                led_buffer.write->rgb[i].g = update_g->update_fnc(update_g);
-                led_buffer.write->rgb[i].r = update_r->update_fnc(update_r);
-                __rgb2dma(&(led_buffer.write->rgb[i]), &(led_buffer.write->buffer[i]));
+                led_buffer.write->col[i].abstract.third = update_b->update_fnc(update_b);
+                led_buffer.write->col[i].abstract.second = update_g->update_fnc(update_g);
+                led_buffer.write->col[i].abstract.first = update_r->update_fnc(update_r);
+                __rgb2dma(&(led_buffer.write->col[i].rgb), &(led_buffer.write->buffer[i]));
             }
 
             led_buffer.write->state = LB_STATE_BUSY;
