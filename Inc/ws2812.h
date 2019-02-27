@@ -110,8 +110,13 @@ struct ws2812_list_handler {
     struct ws2812_operation wops;
 };
 
+enum supported_colors {
+    RGB = 0,
+    HSV
+};
+
 int initialise_buffer(void (*start_dma)(void *ptr, uint16_t size), void (*stop_dma)());
-int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, uint8_t count);
+int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, enum supported_colors scheme, uint8_t count);
 void ws2812_interrupt();
 
 #endif /* WS2812_H_ */

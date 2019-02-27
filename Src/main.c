@@ -145,7 +145,7 @@ int main(void)
   {
     sprintf(a, "100*cos+0;%d...5", i);
     sprintf(b, "100*sin+0;%d...5", j);
-    ws2812_transfer_recurrent(a, b, NULL, 144);
+    ws2812_transfer_recurrent(a, b, NULL, RGB, 144);
     i = i + 5;
     j = j + 5;
     if(i == 360) i = 0;

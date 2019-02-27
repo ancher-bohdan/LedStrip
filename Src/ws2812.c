@@ -137,6 +137,22 @@ static void __hsv2rgb(struct __hsv_buffer *src, struct __rgb_buffer *dst)
     }
 }
 
+static void __hsv2dma(union __color *in, struct __dma_buffer *dst)
+{
+    uint8_t i;
+    struct __rgb_buffer tmp;
+
+    __hsv2rgb(&(in->hsv), &tmp);
+    
+    for(i = 0; i < 8; i++)
+    {
+        dst->R[7 - i] = ((tmp.r) & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+        dst->G[7 - i] = ((tmp.g) & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+        dst->B[7 - i] = ((tmp.b) & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+    }
+
+}
+
 static void __prepare_list_handle(void)
 {
     struct __led_buffer_node *tmp = led_buffer.read;
@@ -253,7 +269,7 @@ exit:
     return result;
 }
 
-int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, uint8_t count)
+int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, enum supported_colors scheme, uint8_t count)
 {
     uint8_t i, j;
     struct update_context *update_r, *update_b, *update_g;
@@ -266,6 +282,18 @@ int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, uint8_t cou
     if(update_b == NULL || update_r == NULL || update_g == NULL) return 1;
 
     __prepare_list_handle();
+
+    switch (scheme)
+    {
+        case RGB:
+            led_buffer.wops.to_dma = __rgb2dma;
+            break;
+        case HSV:
+            led_buffer.wops.to_dma = __hsv2dma;
+            break;
+        default:
+            break;
+    }
 
     memset(tmp->buffer, 0, BUFFER_SIZE * WORDS_PER_LED * 4);
     tmp = tmp->next;
