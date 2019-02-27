@@ -95,15 +95,19 @@ struct __led_buffer_node {
     enum __led_buffer_state state;
 };
 
+struct ws2812_operation {
+    void (*__start_dma_fnc)(void *ptr, uint16_t size);
+    void (*__stop_dma_fnc)();
+
+    void (*to_dma)(union __color *in, struct __dma_buffer *dst);
+};
+
 struct ws2812_list_handler {
     struct __led_buffer_node *read;
     struct __led_buffer_node *write;
     struct __led_buffers buffer;
-};
 
-struct ws2812_operation {
-    void (*__start_dma_fnc)(void *ptr, uint16_t size);
-    void (*__stop_dma_fnc)();
+    struct ws2812_operation wops;
 };
 
 int initialise_buffer(void (*start_dma)(void *ptr, uint16_t size), void (*stop_dma)());

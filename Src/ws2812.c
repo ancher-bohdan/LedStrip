@@ -3,11 +3,9 @@
 
 #include <math.h>
 
-static struct ws2812_operation __external_functions;
-
 static struct ws2812_list_handler led_buffer = {
     .read = NULL,
-    .write = NULL
+    .write = NULL,
 };
 
 static struct __led_buffer_node **__alloc_ring_buffer(struct __led_buffer_node **prev)
@@ -31,14 +29,15 @@ static struct __led_buffer_node **__alloc_ring_buffer(struct __led_buffer_node *
     }
 }
 
-static void __rgb2dma(struct __rgb_buffer *src, struct __dma_buffer *dst)
+static void __rgb2dma(union __color *in, struct __dma_buffer *dst)
 {
     uint8_t i;
+
     for(i = 0; i < 8; i++)
     {
-        dst->R[7 - i] = ((src->r) & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
-        dst->G[7 - i] = ((src->g) & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
-        dst->B[7 - i] = ((src->b) & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+        dst->R[7 - i] = ((in->rgb.r) & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+        dst->G[7 - i] = ((in->rgb.g) & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
+        dst->B[7 - i] = ((in->rgb.b) & (1 << i)) ? LED_CODE_ONE : LED_CODE_ZERO;
     }
 }
 
@@ -151,6 +150,7 @@ static void __prepare_list_handle(void)
     }
 
     led_buffer.read = led_buffer.write;
+    led_buffer.wops.to_dma = __rgb2dma;
 }
 
 int initialise_buffer(void (*start_dma)(void *ptr, uint16_t size), void (*stop_dma)())
@@ -165,8 +165,8 @@ int initialise_buffer(void (*start_dma)(void *ptr, uint16_t size), void (*stop_d
 
     led_buffer.write = led_buffer.read;
 
-    __external_functions.__start_dma_fnc = start_dma;
-    __external_functions.__stop_dma_fnc = stop_dma;
+    led_buffer.wops.__start_dma_fnc = start_dma;
+    led_buffer.wops.__stop_dma_fnc = stop_dma;
 
     return 0;
 }
@@ -278,13 +278,13 @@ int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, uint8_t cou
             tmp->col[j].abstract.second = update_g->update_fnc(update_g);
             tmp->col[j].abstract.first = update_r->update_fnc(update_r);
 
-            __rgb2dma(&(tmp->col[j].rgb), &(tmp->buffer[j]));
+            led_buffer.wops.to_dma(&(tmp->col[j]), &(tmp->buffer[j]));
         }
         tmp = tmp->next;
     }
 
     led_buffer.read->state = LB_STATE_IN_PROGRESS;
-    __external_functions.__start_dma_fnc((uint32_t *)(led_buffer.buffer.dma_buffer), 
+    led_buffer.wops.__start_dma_fnc((uint32_t *)(led_buffer.buffer.dma_buffer), 
                     BUFFER_COUNT * BUFFER_SIZE * WORDS_PER_LED);
     while(1)
     {
@@ -300,7 +300,8 @@ int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, uint8_t cou
                 led_buffer.write->col[i].abstract.third = update_b->update_fnc(update_b);
                 led_buffer.write->col[i].abstract.second = update_g->update_fnc(update_g);
                 led_buffer.write->col[i].abstract.first = update_r->update_fnc(update_r);
-                __rgb2dma(&(led_buffer.write->col[i].rgb), &(led_buffer.write->buffer[i]));
+
+                led_buffer.wops.to_dma(&(led_buffer.write->col[i]), &(led_buffer.write->buffer[i]));
             }
 
             led_buffer.write->state = LB_STATE_BUSY;
@@ -308,7 +309,7 @@ int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, uint8_t cou
         }
     }
 
-    __external_functions.__stop_dma_fnc();
+    led_buffer.wops.__stop_dma_fnc();
 
     free(update_r);
     free(update_g);
