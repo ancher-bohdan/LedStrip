@@ -41,98 +41,48 @@ static void __rgb2dma(union __color *in, struct __dma_buffer *dst)
     }
 }
 
-static void __rgb2hsv(struct __rgb_buffer *src, struct __hsv_buffer *dst)
-{
-    double      min, max, delta;
-
-    min = src->r < src->g ? src->r : src->g;
-    min = min  < src->b ? min  : src->b;
-
-    max = src->r > src->g ? src->r : src->g;
-    max = max  > src->b ? max  : src->b;
-
-    dst->v = max;                                // v
-    delta = max - min;
-    if (delta < 0.00001)
-    {
-        dst->s = 0;
-        dst->h = 0; // undefined, maybe nan?
-        return;
-    }
-    if( max > 0.0 ) { // NOTE: if Max is == 0, this divide would cause a crash
-        dst->s = (delta / max);                  // s
-    } else {
-        // if max is 0, then r = g = b = 0              
-        // s = 0, h is undefined
-        dst->s = 0.0;
-        dst->h = 0;                            // its now undefined
-        return;
-    }
-    if( src->r >= max )                           // > is bogus, just keeps compilor happy
-        dst->h = ( src->g - src->b ) / delta;        // between yellow & magenta
-    else
-    if( src->g >= max )
-        dst->h = 2.0 + ( src->b - src->r ) / delta;  // between cyan & yellow
-    else
-        dst->h = 4.0 + ( src->r - src->g ) / delta;  // between magenta & cyan
-
-    dst->h *= 60.0;                              // degrees
-
-    if( dst->h < 0.0 )
-        dst->h += 360.0;
-}
-
 static void __hsv2rgb(struct __hsv_buffer *src, struct __rgb_buffer *dst)
 {
-    double      hh, p, q, t, ff;
-    long        i;
+    double c, x, m;
+    double s_scale = src->s / 100.0;
+    double v_scale = src->v / 100.0;
 
-    if(src->s <= 0.0) {       // < is bogus, just shuts up warnings
-        dst->r = src->v;
-        dst->g = src->v;
-        dst->b = src->v;
-    }
-    hh = src->h;
-    if(hh >= 360.0) hh = 0.0;
-    hh /= 60.0;
-    i = (long)hh;
-    ff = hh - i;
-    p = src->v * (1.0 - src->s);
-    q = src->v * (1.0 - (src->s * ff));
-    t = src->v * (1.0 - (src->s * (1.0 - ff)));
+    c = v_scale * s_scale;
+    m = v_scale - c;
+    x = c * (1 - fabs(fmod(src->h / 60.0f, 2) - 1));
 
-    switch(i) {
-    case 0:
-        dst->r = src->v;
-        dst->g = t;
-        dst->b = p;
+    switch(src->h/60)
+    {
+        case 0 :
+            dst->r = (uint16_t)((c + m) * 255);
+            dst->g = (uint8_t)((x + m) * 255);
+            dst->b = (uint8_t)(m * 255);
         break;
-    case 1:
-        dst->r = q;
-        dst->g = src->v;
-        dst->b = p;
+        case 1:
+            dst->r = (uint16_t)((x + m) * 255);
+            dst->g = (uint8_t)((c + m) * 255);
+            dst->b = (uint8_t)(m * 255);
         break;
-    case 2:
-        dst->r = p;
-        dst->g = src->v;
-        dst->b = t;
+        case 2:
+            dst->r = (uint16_t)(m * 255);
+            dst->g = (uint8_t)((c + m) * 255);
+            dst->b = (uint8_t)((x + m) * 255);
         break;
-
-    case 3:
-        dst->r = p;
-        dst->g = q;
-        dst->b = src->v;
+        case 3:
+            dst->r = (uint16_t)(m * 255);
+            dst->g = (uint8_t)((x + m) * 255);
+            dst->b = (uint8_t)((c + m) * 255);
         break;
-    case 4:
-        dst->r = t;
-        dst->g = p;
-        dst->b = src->v;
+        case 4:
+            dst->r = (uint16_t)((x + m) * 255);
+            dst->g = (uint8_t)(m * 255);
+            dst->b = (uint8_t)((c + m) * 255);
         break;
-    case 5:
-    default:
-        dst->r = src->v;
-        dst->g = p;
-        dst->b = q;
+        case 5:
+        case 6:
+            dst->r = (uint16_t)((c + m) * 255);
+            dst->g = (uint8_t)(m * 255);
+            dst->b = (uint8_t)((x + m) * 255);
         break;
     }
 }
