@@ -14,7 +14,7 @@ struct update_context {
 struct update_context_linear {
     struct update_context base_ctx;
     uint8_t is_convergens;
-    uint8_t xmax;
+    uint16_t xmax;
 };
 
 struct update_context_trigonometric {
