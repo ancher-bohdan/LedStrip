@@ -5,10 +5,10 @@
 
 struct update_context {
     uint8_t k;
-    uint8_t b;
+    uint16_t b;
     int16_t x_prev;
 
-    uint8_t (*update_fnc)(struct update_context *);
+    uint16_t (*update_fnc)(struct update_context *);
 };
 
 struct update_context_linear {
@@ -24,8 +24,8 @@ struct update_context_trigonometric {
 
 typedef uint8_t (*update_fnc)(struct update_context *);
 
-uint8_t recurent_linear_update(struct update_context *ctx);
-uint8_t recurent_sin_update(struct update_context *ctx);
+uint16_t recurent_linear_update(struct update_context *ctx);
+uint16_t recurent_sin_update(struct update_context *ctx);
 
 #define TO_LINEAR_CONTEXT(ctx)          ((struct update_context_linear *)(ctx))
 
