@@ -80,12 +80,12 @@ static void MX_TIM2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void start_dma_wraper(void *ptr, uint16_t size)
+void start_dma_wrapper(void *ptr, uint16_t size)
 {
   HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_1, ptr, size);
 }
 
-void stop_dma_wraper()
+void stop_dma_wrapper()
 {
   HAL_DMA_Abort_IT(&hdma_tim2_ch1);
   HAL_TIM_PWM_Stop_DMA(&htim2, TIM_CHANNEL_1);
@@ -109,8 +109,8 @@ void half_transfer_complete(DMA_HandleTypeDef *hdma)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  char a[20], b[20];
-  uint16_t i = 0, j = 0;
+  char a[20];
+  uint16_t i = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -135,7 +135,8 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   HAL_DMA_RegisterCallback(&hdma_tim2_ch1, HAL_DMA_XFER_HALFCPLT_CB_ID, half_transfer_complete);
-  initialise_buffer(start_dma_wraper, stop_dma_wraper);
+  
+  ws2812_initialise(start_dma_wrapper, stop_dma_wrapper);
 
   /* USER CODE END 2 */
 
@@ -143,21 +144,13 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /*sprintf(a, "0*lin+%d;0...360",i);
-    i++;
-    if(i == 361)i = 0;
-    ws2812_transfer_recurrent(a, "0*lin+100;1...100", "0*lin+100;1...100", HSV, TR_ALL_LEDSTRIP);
-    HAL_Delay(20);*/
-
-    //sprintf(a, "179*cos+0;%d...1", i);
+    /* rainbow effect */
     sprintf(a, "1*lin+%d;0...360", i);
-    sprintf(b, "0*lin+100;1...100");
     ws2812_transfer_recurrent(a, "0*lin+100;1...100", "0*lin+100;1...100", HSV, TR_ALL_LEDSTRIP);
     i = i + 1;
-    j = j + 5;
     if(i == 720) i = 0;
-    if(j == 360) j = 0;
-    HAL_Delay(20);
+
+    HAL_Delay(10);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
