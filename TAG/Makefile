@@ -37,8 +37,8 @@ BUILD_DIR = build
 # C sources
 C_SOURCES =  \
 ../Src/main.c \
-../Src/ws2812.c \
-../Src/recurrent.c \
+../ws_driver/src/ws2812.c \
+../ws_driver/src/recurrent.c \
 ../Src/stm32f4xx_it.c \
 ../Src/stm32f4xx_hal_msp.c \
 ../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
@@ -118,7 +118,8 @@ C_INCLUDES =  \
 -I../Drivers/STM32F4xx_HAL_Driver/Inc \
 -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy \
 -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include \
--I../Drivers/CMSIS/Include
+-I../Drivers/CMSIS/Include	\
+-I../ws_driver/inc
 
 
 # compile gcc flags

@@ -143,14 +143,21 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    sprintf(a, "100*cos+0;%d...5", i);
-    sprintf(b, "100*sin+0;%d...5", j);
-    ws2812_transfer_recurrent(a, b, NULL, RGB, 144);
-    i = i + 5;
+    /*sprintf(a, "0*lin+%d;0...360",i);
+    i++;
+    if(i == 361)i = 0;
+    ws2812_transfer_recurrent(a, "0*lin+100;1...100", "0*lin+100;1...100", HSV, TR_ALL_LEDSTRIP);
+    HAL_Delay(20);*/
+
+    //sprintf(a, "179*cos+0;%d...1", i);
+    sprintf(a, "1*lin+%d;0...360", i);
+    sprintf(b, "0*lin+100;1...100");
+    ws2812_transfer_recurrent(a, "0*lin+100;1...100", "0*lin+100;1...100", HSV, TR_ALL_LEDSTRIP);
+    i = i + 1;
     j = j + 5;
-    if(i == 360) i = 0;
+    if(i == 720) i = 0;
     if(j == 360) j = 0;
-    HAL_Delay(25);
+    HAL_Delay(20);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

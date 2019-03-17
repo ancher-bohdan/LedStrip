@@ -1,3 +1,21 @@
+/**
+  ******************************************************************************
+  * @file    ws2812.c
+  * @author  Bohdan Chupys
+  * @brief   ws2812 module driver.
+  ******************************************************************************
+  * My implementation of driver for ws2812 ledstrip.
+  * 
+  * This driver must use in system, which support dma transaction to timer.
+  * 
+  * The main data structure, that are used here is ring buffer. Each chain of this buffer contain
+  * value for BUFFER_SIZE leds in ledstrip. This chain contain value, that represent numerical value
+  * of each color component for each led in one chain and data, that will be transfer to led strip
+  * via DMA to satisfy color requirement, set in first parameter. This approach allow to get maximum
+  * performance and scalability with minimum memory consumption.
+  * 
+  */
+
 #include "ws2812.h"
 #include "recurrent.h"
 
@@ -119,24 +137,6 @@ static void __prepare_list_handle(void)
     led_buffer.wops.to_dma = __rgb2dma;
 }
 
-int initialise_buffer(void (*start_dma)(void *ptr, uint16_t size), void (*stop_dma)())
-{
-    struct __led_buffer_node **last;
-
-    last = __alloc_ring_buffer(&led_buffer.read);
-
-    if(last == NULL) return ENOMEM;
-
-    (*last)->next = led_buffer.read;
-
-    led_buffer.write = led_buffer.read;
-
-    led_buffer.wops.__start_dma_fnc = start_dma;
-    led_buffer.wops.__stop_dma_fnc = stop_dma;
-
-    return 0;
-}
-
 static struct update_context *parse_recurrent_param(char *param)
 {
     struct update_context *result;
@@ -219,17 +219,63 @@ exit:
     return result;
 }
 
-int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, enum supported_colors scheme, uint8_t count)
+/**
+ * @brief   Initialisation of ws_driver.
+ * @param   start_dma - function, that start dma transaction
+ * @param   stop_dma - function, that stop or abort dma transaction 
+ * @retval  zero in success, error code otherwise
+ */
+int initialise_buffer(void (*start_dma)(void *ptr, uint16_t size), void (*stop_dma)())
+{
+    struct __led_buffer_node **last;
+
+    last = __alloc_ring_buffer(&led_buffer.read);
+
+    if(last == NULL) return ENOMEM;
+
+    (*last)->next = led_buffer.read;
+
+    led_buffer.write = led_buffer.read;
+
+    led_buffer.wops.__start_dma_fnc = start_dma;
+    led_buffer.wops.__stop_dma_fnc = stop_dma;
+
+    return 0;
+}
+
+/**
+ * @brief   Start single transaction of led data to led strip
+ * @param   r_exp - expression (in string form) that describe form of change of first component
+ *          General form of this expression:
+ *                              <k>*<sin|cos|lin>+<b>;<start>...<max|step>
+ *          The value in braked should be changed by required integer or function`s name.
+ *          All other syntax must be the same
+ * @param   g_exp - same as with first parameter, but related to second component
+ * @param   b_exp - same as with first parameter, but related to third component
+ * @param   scheme - color scheme, that will be used to recognise numerical value of r_exp, b_exp, g_exp
+ *          For ex.: RGB, HSV so on.
+ * @param   count - number of LED`s, that will be flashed. There are (count * BUFFER_SIZE) LED`s.
+ *          you can pass TR_ALL_LEDSTRIP to use all LED`s in ledstrip (LED_NUMBERS)
+ * @retval  zero in success, negative error code otherwise
+ */
+
+int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, enum supported_colors scheme, uint32_t count)
 {
     uint8_t i, j;
     struct update_context *update_r, *update_b, *update_g;
     struct __led_buffer_node *tmp = led_buffer.read;
 
+    if(count == 0) return EOK;
+
+    if(led_buffer.read == NULL || led_buffer.write == NULL) return EINIT;
+
+    if(count == TR_ALL_LEDSTRIP) count = NUMBER_OF_BUFFERS;
+
     update_r = parse_recurrent_param(r_exp);
     update_g = parse_recurrent_param(g_exp);
     update_b = parse_recurrent_param(b_exp);
 
-    if(update_b == NULL || update_r == NULL || update_g == NULL) return 1;
+    if(update_b == NULL || update_r == NULL || update_g == NULL) return ENOMEM;
 
     __prepare_list_handle();
 
@@ -245,6 +291,7 @@ int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, enum suppor
             break;
     }
 
+    /* Reset sequence */
     memset(tmp->buffer, 0, BUFFER_SIZE * WORDS_PER_LED * 4);
     tmp = tmp->next;
 
@@ -268,7 +315,7 @@ int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, enum suppor
     {
         if(led_buffer.write != led_buffer.read)
         {
-            count -= BUFFER_SIZE;
+            count--;
             if(count <= 0) break;
 
             assert_param(led_buffer.write->state == LB_STATE_FREE);
@@ -293,9 +340,15 @@ int ws2812_transfer_recurrent(char *r_exp, char *g_exp, char *b_exp, enum suppor
     free(update_g);
     free(update_b);
 
-    return 0;
+    return EOK;
 }
 
+/**
+ * @brief   Function, that must be called from dma interrupts.
+ *          In case of dma double buffer mode (which will be implemented shortly) this function must
+ *          be called 4 times per one dma transaction. For now, this function must me called twice
+ *          per dma transaction (dma_transfer_complete & dma_half_transfer_complete)
+ */
 void ws2812_interrupt()
 {
     assert_param(led_buffer.read->state == LB_STATE_IN_PROGRESS);
@@ -304,4 +357,3 @@ void ws2812_interrupt()
     led_buffer.read = led_buffer.read->next;
     led_buffer.read->state = LB_STATE_IN_PROGRESS;
 }
-
