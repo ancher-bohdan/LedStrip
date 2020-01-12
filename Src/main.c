@@ -43,7 +43,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "ws2812.h"
+#include "adapter/adapter.h"
+
 #include "arm_math.h"
 /* USER CODE END Includes */
 
@@ -64,9 +65,11 @@
 
 /* Private variables ---------------------------------------------------------*/
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim6;
 DMA_HandleTypeDef hdma_tim2_ch1;
 
 /* USER CODE BEGIN PV */
+static struct adapter *ws2812_adapter = NULL;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -74,6 +77,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -93,12 +97,27 @@ void stop_dma_wrapper()
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 {
-  ws2812_interrupt();
+  ws2812_adapter->base.dma_interrupt(&ws2812_adapter->base);
 }
 
 void half_transfer_complete(DMA_HandleTypeDef *hdma)
 {
-  ws2812_interrupt();
+  ws2812_adapter->base.dma_interrupt(&ws2812_adapter->base);
+}
+
+void TIM_start()
+{
+  HAL_TIM_IC_Start_IT(&htim6, TIM_CHANNEL_1);
+}
+
+void TIM_stop()
+{
+  HAL_TIM_IC_Stop_IT(&htim6, TIM_CHANNEL_1);
+}
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+  ws2812_adapter->base.timer_interrupt(&ws2812_adapter->base);
 }
 /* USER CODE END 0 */
 
@@ -109,9 +128,16 @@ void half_transfer_complete(DMA_HandleTypeDef *hdma)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  char a[20];
-  uint16_t i = 0;
+static struct ws2812_operation_fn_table fn = 
+{
+  .hw_start_dma = start_dma_wrapper,
+  .hw_stop_dma = stop_dma_wrapper,
+  .hw_start_timer = TIM_start,
+  .hw_stop_timer = TIM_stop,
+  .hw_delay = HAL_Delay
+};
   /* USER CODE END 1 */
+  
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -133,23 +159,19 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_TIM2_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   HAL_DMA_RegisterCallback(&hdma_tim2_ch1, HAL_DMA_XFER_HALFCPLT_CB_ID, half_transfer_complete);
-  
-  ws2812_initialise(start_dma_wrapper, stop_dma_wrapper);
 
+  init_adapter(&fn, ws2812_adapter, RGB);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* rainbow effect */
-    sprintf(a, "1*lin+%d;0...360", i);
-    ws2812_transfer_recurrent(a, "0*lin+100;1...100", "0*lin+100;1...100", HSV, TR_ALL_LEDSTRIP);
-    i = i + 1;
-    if(i == 720) i = 0;
 
+    adapter_process(ws2812_adapter);
     HAL_Delay(10);
     /* USER CODE END WHILE */
 
@@ -167,11 +189,11 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /**Configure the main internal regulator output voltage 
+  /** Configure the main internal regulator output voltage 
   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-  /**Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB busses clocks 
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
@@ -185,7 +207,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /**Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB busses clocks 
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
@@ -223,6 +245,7 @@ static void MX_TIM2_Init(void)
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 104;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
   {
     Error_Handler();
@@ -245,6 +268,44 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 2 */
   HAL_TIM_MspPostInit(&htim2);
+
+}
+
+/**
+  * @brief TIM6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM6_Init(void)
+{
+
+  /* USER CODE BEGIN TIM6_Init 0 */
+
+  /* USER CODE END TIM6_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 84;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 10000;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
+
+  /* USER CODE END TIM6_Init 2 */
 
 }
 
