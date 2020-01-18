@@ -70,6 +70,24 @@ DMA_HandleTypeDef hdma_tim2_ch1;
 
 /* USER CODE BEGIN PV */
 static struct adapter *ws2812_adapter = NULL;
+static struct source_config configs[] =
+{
+  {
+    .k = 50,
+    .b = 0,
+    .y_max = 255
+  },
+  {
+    .k = 0,
+    .b = 0,
+    .y_max = 255
+  },
+  {
+    .k = 0,
+    .b = 0, 
+    .y_max = 255
+  }
+};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -166,7 +184,7 @@ static struct ws2812_operation_fn_table fn =
   MX_TIM2_Init();
   MX_TIM14_Init();
   /* USER CODE BEGIN 2 */
-  init_adapter(&fn, &ws2812_adapter, RGB);
+  init_adapter(&fn, &ws2812_adapter, RGB, make_source_aggregator_from_config(&configs[0], &configs[1], &configs[2]));
   /* USER CODE END 2 */
 
   /* Infinite loop */
