@@ -107,9 +107,12 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
   }
 }
 
-void half_transfer_complete(DMA_HandleTypeDef *hdma)
+void HAL_TIM_PWM_PulseFinishedHalfCpltCallback(TIM_HandleTypeDef *htim)
 {
-  ws2812_adapter->base.dma_interrupt(&ws2812_adapter->base);
+  if(htim == &htim2)
+  {
+    ws2812_adapter->base.dma_interrupt(&ws2812_adapter->base);
+  }
 }
 
 void TIM_start()
@@ -163,8 +166,6 @@ static struct ws2812_operation_fn_table fn =
   MX_TIM2_Init();
   MX_TIM14_Init();
   /* USER CODE BEGIN 2 */
-  HAL_DMA_RegisterCallback(&hdma_tim2_ch1, HAL_DMA_XFER_HALFCPLT_CB_ID, half_transfer_complete);
-
   init_adapter(&fn, &ws2812_adapter, RGB);
   /* USER CODE END 2 */
 
