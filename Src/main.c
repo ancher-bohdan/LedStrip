@@ -73,19 +73,25 @@ static struct adapter *ws2812_adapter = NULL;
 static struct source_config configs[] =
 {
   {
-    .k = 50,
+    .k = 1,
     .b = 0,
-    .y_max = 255
+    .y_max = 360,
+    
+    .change_step = 1,
   },
   {
     .k = 0,
-    .b = 0,
-    .y_max = 255
+    .b = 100,
+    .y_max = 255,
+
+    .change_step = 0
   },
   {
     .k = 0,
-    .b = 0, 
-    .y_max = 255
+    .b = 100, 
+    .y_max = 255,
+
+    .change_step = 0
   }
 };
 /* USER CODE END PV */
@@ -184,16 +190,15 @@ static struct ws2812_operation_fn_table fn =
   MX_TIM2_Init();
   MX_TIM14_Init();
   /* USER CODE BEGIN 2 */
-  init_adapter(&fn, &ws2812_adapter, RGB, make_source_aggregator_from_config(&configs[0], &configs[1], &configs[2]));
+  ws2812_adapter = adapter_init(&fn, HSV);
+  adapter_set_source_originator_from_config(ws2812_adapter, &configs[0], &configs[1], &configs[2]);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
     adapter_process(ws2812_adapter);
-    HAL_Delay(10);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
