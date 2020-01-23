@@ -70,28 +70,34 @@ DMA_HandleTypeDef hdma_tim2_ch1;
 
 /* USER CODE BEGIN PV */
 static struct adapter *ws2812_adapter = NULL;
-static struct source_config configs[] =
+static struct source_config_function configs[] =
 {
   {
+    .base.type = SOURCE_TYPE_LINEAR,
     .k = 1,
     .b = 0,
     .y_max = 360,
     
-    .change_step = 1,
+    .change_step_b = 1,
+    .change_step_k = 0
   },
   {
+    .base.type = SOURCE_TYPE_LINEAR,
     .k = 0,
     .b = 100,
     .y_max = 255,
 
-    .change_step = 0
+    .change_step_b = 0,
+    .change_step_k = 0
   },
   {
+    .base.type = SOURCE_TYPE_LINEAR,
     .k = 0,
     .b = 100, 
     .y_max = 255,
 
-    .change_step = 0
+    .change_step_b = 0,
+    .change_step_k = 0
   }
 };
 /* USER CODE END PV */
@@ -157,6 +163,10 @@ void TIM_stop()
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+  struct source_config *first = (struct source_config *)(&configs[0]);
+  struct source_config *second = (struct source_config *)(&configs[1]);
+  struct source_config *third = (struct source_config *)(&configs[2]);
+
 static struct ws2812_operation_fn_table fn = 
 {
   .hw_start_dma = start_dma_wrapper,
@@ -190,8 +200,8 @@ static struct ws2812_operation_fn_table fn =
   MX_TIM2_Init();
   MX_TIM14_Init();
   /* USER CODE BEGIN 2 */
-  ws2812_adapter = adapter_init(&fn, HSV);
-  adapter_set_source_originator_from_config(ws2812_adapter, &configs[0], &configs[1], &configs[2]);
+  ws2812_adapter = adapter_init(&fn, HSV, 5);
+  adapter_set_source_originator_from_config(ws2812_adapter, first, second, third);
   /* USER CODE END 2 */
 
   /* Infinite loop */
