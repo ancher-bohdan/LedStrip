@@ -69,36 +69,56 @@ TIM_HandleTypeDef htim14;
 DMA_HandleTypeDef hdma_tim2_ch1;
 
 /* USER CODE BEGIN PV */
+float sin_wrapper(float angle);
+
 static struct adapter *ws2812_adapter = NULL;
-static struct source_config_function configs[] =
+static struct source_config_trigonometric config_sin = 
 {
+  .base = 
   {
-    .base.type = SOURCE_TYPE_LINEAR,
-    .k = 1,
+    .base = 
+    {
+      .type = SOURCE_TYPE_TRIGONOMETRIC,
+    },
+    .k = 100,
     .b = 0,
-    .y_max = 360,
-    
+    .y_max = 255,
+
     .change_step_b = 1,
-    .change_step_k = 0
+    .change_step_k = 10
   },
-  {
-    .base.type = SOURCE_TYPE_LINEAR,
-    .k = 0,
-    .b = 100,
-    .y_max = 255,
 
-    .change_step_b = 0,
-    .change_step_k = 0
-  },
-  {
-    .base.type = SOURCE_TYPE_LINEAR,
-    .k = 0,
-    .b = 100, 
-    .y_max = 255,
+  .hw_sinus = sin_wrapper,
+};
 
-    .change_step_b = 0,
-    .change_step_k = 0
-  }
+static struct source_config_function config0 =
+{
+  .base.type = SOURCE_TYPE_LINEAR,
+  .k = 1,
+  .b = 0,
+  .y_max = 360,
+  .change_step_b = 1,
+  .change_step_k = 0
+};
+
+static struct source_config_function config1 =
+{
+  .base.type = SOURCE_TYPE_LINEAR,
+  .k = 0,
+  .b = 0,
+  .y_max = 255,
+  .change_step_b = 0,
+  .change_step_k = 0
+};
+
+static struct source_config_function config2 =
+{
+  .base.type = SOURCE_TYPE_LINEAR,
+  .k = 0,
+  .b = 0,
+  .y_max = 255,
+  .change_step_b = 0,
+  .change_step_k = 0
 };
 /* USER CODE END PV */
 
@@ -114,6 +134,17 @@ static void MX_TIM14_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+float sin_wrapper(float angle)
+{
+  float sinus = 0;
+  float cosine = 0;
+
+  arm_sin_cos_f32(angle, &sinus, &cosine);
+
+  return sinus;
+}
+
+
 void start_dma_wrapper(void *ptr, uint16_t size)
 {
   HAL_TIM_PWM_Start_DMA(&htim2, TIM_CHANNEL_1, ptr, size);
@@ -163,9 +194,9 @@ void TIM_stop()
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  struct source_config *first = (struct source_config *)(&configs[0]);
-  struct source_config *second = (struct source_config *)(&configs[1]);
-  struct source_config *third = (struct source_config *)(&configs[2]);
+  struct source_config *first = (struct source_config *)(&config_sin);
+  struct source_config *second = (struct source_config *)(&config1);
+  struct source_config *third = (struct source_config *)(&config2);
 
 static struct ws2812_operation_fn_table fn = 
 {
@@ -200,8 +231,11 @@ static struct ws2812_operation_fn_table fn =
   MX_TIM2_Init();
   MX_TIM14_Init();
   /* USER CODE BEGIN 2 */
-  ws2812_adapter = adapter_init(&fn, HSV, 5);
-  adapter_set_source_originator_from_config(ws2812_adapter, first, second, third);
+  ws2812_adapter = adapter_init(&fn, RGB, 5);
+  if(adapter_set_source_originator_from_config(ws2812_adapter, first, second, third))
+  {
+    while(1){}
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */

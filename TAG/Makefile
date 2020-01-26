@@ -41,6 +41,7 @@ C_SOURCES =  \
 ../ws2812_driver/src/adapter/adapter.c \
 ../ws2812_driver/src/source/source_aggregator.c \
 ../ws2812_driver/src/source/source_linear.c \
+../ws2812_driver/src/source/source_trigonometric.c \
 ../Src/stm32f4xx_it.c \
 ../Src/stm32f4xx_hal_msp.c \
 ../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
