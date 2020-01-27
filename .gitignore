@@ -1,4 +1,5 @@
 cscope.file
 tags
-TAG/build/
-.vscode
+build/
+bin/
+.*

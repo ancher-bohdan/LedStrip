@@ -29,37 +29,37 @@ OPT = -O0
 # paths
 #######################################
 # Build path
-BUILD_DIR = build
+BUILD_DIR = bin
 
 ######################################
 # source
 ######################################
 # C sources
 C_SOURCES =  \
-../Src/main.c \
-../ws2812_driver/src/driver/ws2812_driver.c \
-../ws2812_driver/src/adapter/adapter.c \
-../ws2812_driver/src/source/source_aggregator.c \
-../ws2812_driver/src/source/source_linear.c \
-../ws2812_driver/src/source/source_trigonometric.c \
-../Src/stm32f4xx_it.c \
-../Src/stm32f4xx_hal_msp.c \
-../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
-../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c \
-../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
-../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c \
-../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c \
-../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c \
-../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c \
-../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c \
-../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c \
-../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c \
-../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c \
-../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c \
-../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c \
-../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c \
-../Src/system_stm32f4xx.c \
-../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c
+Src/main.c \
+ws2812_driver/src/driver/ws2812_driver.c \
+ws2812_driver/src/adapter/adapter.c \
+ws2812_driver/src/source/source_aggregator.c \
+ws2812_driver/src/source/source_linear.c \
+ws2812_driver/src/source/source_trigonometric.c \
+Src/stm32f4xx_it.c \
+Src/stm32f4xx_hal_msp.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c \
+Src/system_stm32f4xx.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c
 
 # ASM sources
 ASM_SOURCES =  \
@@ -118,13 +118,14 @@ AS_INCLUDES =
 
 # C includes
 C_INCLUDES =  \
--I../Inc \
--I../Drivers/STM32F4xx_HAL_Driver/Inc \
--I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy \
--I../Drivers/CMSIS/Device/ST/STM32F4xx/Include \
--I../Drivers/CMSIS/Include	 \
--I../ws2812_driver/inc \
--I../Drivers/CMSIS/Include
+-I.		\
+-IInc \
+-IDrivers/STM32F4xx_HAL_Driver/Inc \
+-IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \
+-IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
+-IDrivers/CMSIS/Include	 \
+-Iws2812_driver/inc \
+-IDrivers/CMSIS/Include
 
 
 # compile gcc flags
@@ -149,11 +150,15 @@ LDSCRIPT = STM32F407VGTx_FLASH.ld
 
 # libraries
 LIBS = -lc -lm -lnosys 
-LIBDIR = ../Drivers/CMSIS/Lib/GCC/libarm_cortexM4lf_math.a
+LIBDIR = Drivers/CMSIS/Lib/GCC/libarm_cortexM4lf_math.a
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
+all:
+	@test -f .config.h || $(MAKE) -f Makefile menuconfig
+	@$(MAKE) -f Makefile compile
+
 # default action: build all
-all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
+compile: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
 
 
 #######################################
@@ -183,12 +188,19 @@ $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	$(BIN) $< $@	
 	
 $(BUILD_DIR):
-	mkdir $@		
+	mkdir -p $@		
+
+#######################################
+# menuconfig
+#######################################
+menuconfig:
+	$(MAKE) -f scripts/Makefile $@
 
 #######################################
 # clean up
 #######################################
 clean:
+	$(MAKE) -f scripts/Makefile $@
 	-rm -fR $(BUILD_DIR)
   
 #######################################
