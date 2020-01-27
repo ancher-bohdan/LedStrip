@@ -10,6 +10,8 @@
 #   2015-07-22 - first version
 # ------------------------------------------------
 
+-include .config
+
 ######################################
 # target
 ######################################
@@ -19,10 +21,8 @@ TARGET = ledstrip
 ######################################
 # building variables
 ######################################
-# debug build?
-DEBUG = 1
 # optimization
-OPT = -O0
+OPT = $(subst ",,$(CONFIG_C_OPTIMIZATION_LEVEL))
 
 
 #######################################
@@ -69,7 +69,7 @@ startup_stm32f407xx.s
 #######################################
 # binaries
 #######################################
-PREFIX = ccache arm-none-eabi-
+PREFIX = $(subst ",,$(CONFIG_CROSS_COMPILE))
 # The gcc compiler bin path can be either defined in make command via GCC_PATH variable (> make GCC_PATH=xxx)
 # either it can be added to the PATH environment variable.
 ifdef GCC_PATH
@@ -128,13 +128,22 @@ C_INCLUDES =  \
 
 
 # compile gcc flags
-ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
+ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -g -x assembler-with-cpp -specs=nano.specs
 
-CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
+CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT)
 
-ifeq ($(DEBUG), 1)
-CFLAGS += -g -gdwarf-2
-endif
+CFLAGS += -std=$(subst ",,$(CONFIG_C_LANGUAGE_STANDARD))
+CFLAGS += $(subst ",,$(CONFIG_C_DATA_SECTIONS)) \
+          $(subst ",,$(CONFIG_C_FUNCTION_SECTIONS)) \
+          $(subst ",,$(CONFIG_C_STACK_USAGE)) \
+          $(subst ",,$(CONFIG_C_WARNING_ALL)) \
+          $(subst ",,$(CONFIG_C_WARNING_ERROR)) \
+          $(subst ",,$(CONFIG_C_WARNING_EXTRA)) \
+          $(subst ",,$(CONFIG_C_WARNING_NO_UNUSED_PARAMETER)) \
+          $(subst ",,$(CONFIG_C_WARNING_SWITCH_DEFAULT)) \
+          $(subst ",,$(CONFIG_C_WARNING_SWITCH_ENUM)) \
+		  $(subst ",,$(CONFIG_C_DEBUG_LEVEL)) -gdwarf-2
+
 
 
 # Generate dependency information
