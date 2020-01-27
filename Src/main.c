@@ -231,7 +231,7 @@ static struct ws2812_operation_fn_table fn =
   MX_TIM2_Init();
   MX_TIM14_Init();
   /* USER CODE BEGIN 2 */
-  ws2812_adapter = adapter_init(&fn, RGB, 5);
+  ws2812_adapter = adapter_init(&fn, RGB, CONFIG_DELAY_MS);
   if(adapter_set_source_originator_from_config(ws2812_adapter, first, second, third))
   {
     while(1){}
